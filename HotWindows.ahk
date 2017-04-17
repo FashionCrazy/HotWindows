@@ -9,7 +9,7 @@ ComObjError(false)
 SetBatchLines -1
 
 ;<<<<<<<<<<<<默认值>>>>>>>>>>>>
-Path_data=%A_ScriptDir%\HotWindows.mdb	;数据库地址
+Path_data=%A_ScriptDir%\HotWindows.mdb
 
 ;<<<<<<<<<<<<WIN10 WIN8中重要的设置值>>>>>>>>>>>>
 RegRead,Bubble,HKEY_CURRENT_USER,SOFTWARE\Policies\Microsoft\Windows\Explorer,EnableLegacyBalloonNotifications
