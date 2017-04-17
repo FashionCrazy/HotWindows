@@ -7,7 +7,7 @@ DetectHiddenWindows,On
 #ErrorStdOut
 ComObjError(false)
 SetBatchLines -1
-
+;群更新测试
 ;<<<<<<<<<<<<默认值>>>>>>>>>>>>
 Path_data=%A_ScriptDir%\HotWindows.mdb
 
