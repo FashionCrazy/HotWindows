@@ -23,6 +23,11 @@
 ![](https://github.com/liumenggit/pic/raw/master/alipayhotwin12.png)
 
 ## 更新历史
+* 201739
+	* 优化-窗口获取与Alt+Tab窗口一致
+	* 优化-窗口添加时自动将标题转换首拼
+	* 优化-自动删除两日前冗余数据
+	* 优化-热键查询窗口语句优化
 * 201715
 	* 优化-脚本运行更顺畅线程不会别轻易的中断
 	* 优化-使用[GitHubUpdete](https://github.com/liumenggit/GitUpdate)更新自身
