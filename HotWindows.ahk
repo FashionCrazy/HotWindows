@@ -52,14 +52,14 @@ Menu,Tray,Add,重启脚本,Reload
 Menu,Tray,Add,退出脚本,ExitApp
 IfExist,MenuIco.icl
 {
-	Menu,Tray,Icon,激活热键,MenuIco.icl,6
-	Menu,Tray,Icon,支持作者,MenuIco.icl,9
-	Menu,Tray,Icon,显示方式,MenuIco.icl,5
-	Menu,Tray,Icon,添加程序,MenuIco.icl,3
-	Menu,Tray,Icon,清除记录,MenuIco.icl,4
-	Menu,Tray,Icon,重启脚本,MenuIco.icl,1
-	Menu,Tray,Icon,退出脚本,MenuIco.icl,2
-	Menu,Tray,Icon,MenuIco.icl,8
+	Menu,Tray,Icon,激活热键,MenuIco.icl,7
+	Menu,Tray,Icon,支持作者,MenuIco.icl,4
+	Menu,Tray,Icon,显示方式,MenuIco.icl,1
+	Menu,Tray,Icon,添加程序,MenuIco.icl,8
+	Menu,Tray,Icon,清除记录,MenuIco.icl,2
+	Menu,Tray,Icon,重启脚本,MenuIco.icl,5
+	Menu,Tray,Icon,退出脚本,MenuIco.icl,6
+	Menu,Tray,Icon,MenuIco.icl,9
 	Menu,Tray,Icon,,,1
 }
 RegRead,HotRun,HKEY_CURRENT_USER,Software\Microsoft\Windows\CurrentVersion\Run,HotRun
