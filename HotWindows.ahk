@@ -8,7 +8,12 @@ DetectHiddenWindows,On
 ComObjError(false)
 SetBatchLines -1
 
-;msgbox % zh2py("中文")
+if not A_IsUnicode
+{
+	MsgBox,编译出错请使用AutoHotkeyU32运行
+	ExitApp
+}
+
 ;<<<<<<<<<<<<默认值>>>>>>>>>>>>
 WS_EX_APPWINDOW = 0x40000 ; provides a taskbar button
 WS_EX_TOOLWINDOW = 0x80 ; removes the window from the alt-tab list
@@ -131,15 +136,17 @@ Gui,Add,StatusBar
 WinSet,Transparent,200,ahk_id %MyGuiHwnd%
 
 ;<<<<<<<<<<<<创建SQL表>>>>>>>>>>>>
+FileDelete,%Path_data%
+Sleep,200
 IfNotExist,%Path_data%
 {
 	Catalog:=ComObjCreate("ADOX.Catalog")
 	Catalog.Create("Provider='Microsoft.Jet.OLEDB.4.0';Data Source=" Path_data)
-	SQL_Run("CREATE TABLE Now_list(Title varchar(255),Pid varchar(255),Path varchar(255))")	;添加程序数据库表
-	SQL_Run("CREATE TABLE Quick(Title varchar(255),Pid varchar(255),Path varchar(255))")	;添加程序数据库表
 	SQL_Run("CREATE TABLE Activate(Title varchar(255),pinyin varchar(255),Times varchar(255),Add_Time varchar(255))")	;添加程序数据库表
+	SQL_Run("CREATE TABLE Nowlist(Title varchar(255),Pid varchar(255),Path varchar(255))")	;添加程序数据库表
+	SQL_Run("CREATE TABLE Quick(Title varchar(255),Pid varchar(255),Path varchar(255))")	;添加程序数据库表
 }else{
-	SQL_Run("Delete FROM Now_list")
+	SQL_Run("Delete FROM Nowlist")
 }
 
 ;<<<<<<<<<<<<加载列表>>>>>>>>>>>>
@@ -169,7 +176,7 @@ if (StrLens="1"){
 	}
 	SetTimer,Key_wait,1
 }
-SQL_List("SELECT Activate.title,Activate.times,t1.pid,t1.path FROM Activate LEFT JOIN (SELECT * FROM Now_list UNION SELECT * FROM Quick) AS t1 ON Activate.title = t1.title WHERE (t1.pid IS NOT NULL OR t1.path IS NOT NULL) and Activate.pinyin LIKE '%" K_ThisHotkey "%' ORDER BY Activate.Times +- 1 DESC,t1.pid DESC")
+SQL_List("SELECT Activate.title,Activate.times,t1.pid,t1.path FROM Activate LEFT JOIN (SELECT * FROM Nowlist UNION SELECT * FROM Quick) AS t1 ON Activate.title = t1.title WHERE (t1.pid IS NOT NULL OR t1.path IS NOT NULL) and Activate.pinyin LIKE '%" K_ThisHotkey "%' ORDER BY Activate.Times +- 1 DESC,t1.pid DESC")
 if WHERE_list.Length() and K_ThisHotkey{
 	Show_list(WHERE_list)
 	if (WHERE_list.Length()="1"){
@@ -401,12 +408,12 @@ Load_exe(windowID){
 			WinGetTitle,Title,ahk_id %windowID%
 			SplitPath,Path,OutFileName,OutDir,OutExtension,OutNameNoExt,OutDrive
 			;IfNotInString,Path,%A_WinDir%
-			SQL_Run("Delete FROM Now_list WHERE Path LIKE '%" OutFileName "'")
+			SQL_Run("Delete FROM Nowlist WHERE Path LIKE '%" OutFileName "'")
 			;MsgBox % Title
-			if SQL_Get("SELECT COUNT(*) FROM Now_list WHERE Title='" Title "'")
+			if SQL_Get("SELECT COUNT(*) FROM Nowlist WHERE Title='" Title "'")
 				return
 			Add_quick(Path)
-			SQL_Run("Insert INTO Now_list (Title,PID,Path) VALUES ('" Title "','" windowID "','" Path "')")
+			SQL_Run("Insert INTO Nowlist (Title,PID,Path) VALUES ('" Title "','" windowID "','" Path "')")
 			if not SQL_Get("SELECT Times FROM Activate WHERE Title='" Title "'")
 				SQL_Run("Insert INTO Activate (Title,pinyin,Times,Add_Time) VALUES ('" Title "','" zh2py(Title) "','1','" A_Now "')")
 		}
@@ -513,7 +520,7 @@ return
 Dele_mdb:
 	TrayTip,HotWindows,等待操作完成,,1
 	SQL_Run("Delete FROM Activate")
-	SQL_Run("Delete FROM Now_list")
+	SQL_Run("Delete FROM Nowlist")
 	SQL_Run("Delete FROM Quick")
 	RegDelete,HKEY_CURRENT_USER,HotWindows,HotStyles
 	RegDelete,HKEY_CURRENT_USER,HotWindows,Path_list
@@ -556,7 +563,7 @@ ExitApp:
 		{
 			IfWinNotExist,ahk_id %wPID%
 			{
-				SQL_Run("Delete FROM Now_list WHERE PID='" Recordset.Fields["PID"].Value "'")
+				SQL_Run("Delete FROM Nowlist WHERE PID='" Recordset.Fields["PID"].Value "'")
 				Recordset.MoveNext()
 				continue
 			}
@@ -565,7 +572,7 @@ ExitApp:
 		{
 			IfNotExist,%wPath%
 			{
-				SQL_Run("Delete FROM Now_list WHERE Path='" Recordset.Fields["Path"].Value "'")
+				SQL_Run("Delete FROM Nowlist WHERE Path='" Recordset.Fields["Path"].Value "'")
 				Recordset.MoveNext()
 				continue
 			}
@@ -697,7 +704,9 @@ Git_Downloand(DownloandInfo,Project_Name){
 	DownUrl:="https://github.com" DownloandInfo.Down
 	SplitPath,A_ScriptName,,,,A_name
 	SplitPath,DownUrl,DownName,,,OutNameNoExt
-	if not Z_Down(DownUrl,"",A_name,A_Temp "\" DownName){
+	;if not Z_Down(DownUrl,"",A_name,A_Temp "\" DownName){
+	MsgBox % DownUrl "`n" DownName
+	if not DownloadFile(DownUrl,A_Temp "\" DownName){
 		Progress,Off
 		return
 	}
@@ -773,6 +782,53 @@ W_InternetCheckConnection(lpszUrl){ ;检查FTP服务是否可连接
 	dwReserved := 0x0
 	return, DllCall("Wininet.dll\InternetCheckConnection", "Ptr", &lpszUrl, "UInt", FLAG_ICC_FORCE_CONNECTION, "UInt", dwReserved, "Int")
 }
+
+
+DownloadFile(UrlToFile, SaveFileAs, Overwrite := True, UseProgressBar := True) {
+	;Check if the file already exists and if we must not overwrite it
+		If (!Overwrite && FileExist(SaveFileAs))
+		Return
+		;Check if the user wants a progressbar
+		If (UseProgressBar) {
+			;Initialize the WinHttpRequest Object
+				WebRequest := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+				;Download the headers
+				WebRequest.Open("HEAD", UrlToFile)
+				WebRequest.Send()
+				;Store the header which holds the file size in a variable:
+				FinalSize := WebRequest.GetResponseHeader("Content-Length")
+				;Create the progressbar and the timer
+				SetTimer, __UpdateProgressBar, 100
+		}
+	;Download the file
+		UrlDownloadToFile, %UrlToFile%, %SaveFileAs%
+		;Remove the timer and the progressbar because the download has finished
+		If (UseProgressBar) {
+			Progress, Off
+				SetTimer, __UpdateProgressBar, Off
+				Return "True"
+		}
+	Return
+
+		;The label that updates the progressbar
+		__UpdateProgressBar:
+		;Get the current filesize and tick
+		CurrentSize := FileOpen(SaveFileAs,"r").Length ;FileGetSize wouldn't return reliable results
+		CurrentSizeTick := A_TickCount
+		;Calculate the downloadspeed
+		Speed := Round((CurrentSize/1024-LastSize/1024)/((CurrentSizeTick-LastSizeTick)/1000)) "Kb/s"
+		;Save the current filesize and tick for the next time
+		LastSizeTick := CurrentSizeTick
+		LastSize := FileOpen(SaveFileAs,"r").Length
+		;Calculate percent done
+		PercentDone := Round(CurrentSize/FinalSize*100)
+		;Update the ProgressBar
+		Progress, %PercentDone%, % Speed
+		Return
+}
+
+
+
 Z_Down(url:="http://61.135.169.125/forbiddenip/forbidden.html", Proxy:="",e:="utf-8", File:="",byref buf:=""){
 	if (!(File?o:=FileOpen(File, "w"):1) or !DllCall("LoadLibrary", "str", "wininet") or !(h := DllCall("wininet\InternetOpen", "str", "", "uint", Proxy?3:1, "str", Proxy, "str", "", "uint", 0)))
 		return 0
