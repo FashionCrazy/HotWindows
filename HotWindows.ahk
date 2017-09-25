@@ -705,7 +705,6 @@ Git_Downloand(DownloandInfo,Project_Name){
 	SplitPath,A_ScriptName,,,,A_name
 	SplitPath,DownUrl,DownName,,,OutNameNoExt
 	;if not Z_Down(DownUrl,"",A_name,A_Temp "\" DownName){
-	MsgBox % DownUrl "`n" DownName
 	if not DownloadFile(DownUrl,A_Temp "\" DownName){
 		Progress,Off
 		return
