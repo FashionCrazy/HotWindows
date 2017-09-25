@@ -21,27 +21,17 @@ GW_OWNER = 4
 Path_data=%A_ScriptDir%\HotWindows.mdb	;数据库地址
 
 ;<<<<<<<<<<<<WIN10 WIN8中重要的设置值>>>>>>>>>>>>
-RegRead,Bubble,HKEY_CURRENT_USER,SOFTWARE\Policies\Microsoft\Windows\Explorer,EnableLegacyBalloonNotifications
-if not Bubble
-MsgBox,4,重要设置,脚本需要使用气泡提示点击Yes确定切换为气泡提示`n如需恢复请在启动后托盘设置中更改
-IfMsgBox Yes
-{
-	RegWrite,REG_DWORD,HKEY_CURRENT_USER,SOFTWARE\Policies\Microsoft\Windows\Explorer,EnableLegacyBalloonNotifications,1
-	RunWait %comspec% /c "taskkill /f /im explorer.exe",,Hide
-	Run %comspec% /c "start c:\Windows\explorer.exe",,Hide
-}
 ;SplashImage,F:\Git\HotWindows\alipayhotwin12.png,b x0 y0 ; ,下面文本,上面的文本,窗口标题
 Progress,,初始化,初始化请稍等...,HotWindows
 ;<<<<<<<<<<<<预设与配置>>>>>>>>>>>>
 Menu,Tray,NoStandard
 Show_modes=TrayTip,ListView
 Hot_keys=Space,Tab
-loop,Parse,Show_modes,`,
-	Menu,Show_mode,Add,%A_LoopField%,Show_mode
+Menu,Show_mode,Add,Traytip,Traytip
+Menu,Show_mode,Add,listview,listview
 loop,Parse,Hot_keys,`,
 	Menu,Hot_key,Add,%A_LoopField%,Hot_key
 Menu,Tray,Add,开机启动,Auto
-Menu,Tray,Add,气泡提示,Bubble
 Menu,Tray,Add,输入保护,Boot
 Menu,Tray,Add,支持作者,Support
 Menu,Tray,Add
@@ -68,7 +58,6 @@ IfExist,MenuIco.icl
 	Menu,Tray,Icon,,,1
 }
 RegRead,HotRun,HKEY_CURRENT_USER,Software\Microsoft\Windows\CurrentVersion\Run,HotRun
-RegRead,Bubble,HKEY_CURRENT_USER,SOFTWARE\Policies\Microsoft\Windows\Explorer,EnableLegacyBalloonNotifications
 RegRead,Show_mode,HKEY_CURRENT_USER,HotWindows,HotShow_mode	;显示方式
 RegRead,Hot_Set_key,HKEY_CURRENT_USER,HotWindows,HotHot_key	;激活热键
 RegRead,Boot,HKEY_CURRENT_USER,HotWindows,Hotboot	;输入保护
@@ -86,7 +75,7 @@ if not Hot_Set_key{
 if not Show_mode{
 	Show_mode=ListView
 	RegWrite,REG_SZ,HKEY_CURRENT_USER,HotWindows,HotShow_mode,% Show_mode
-	Menu,Show_mode,ToggleCheck,ListView
+	Menu,Show_mode,ToggleCheck,listview
 }else{
 	Menu,Show_mode,ToggleCheck,%Show_mode%
 }
@@ -95,8 +84,6 @@ IfExist,%HotRun%
 	RegWrite,REG_SZ,HKEY_CURRENT_USER,Software\Microsoft\Windows\CurrentVersion\Run,HotRun,%A_ScriptFullPath%
 	Menu,Tray,ToggleCheck,开机启动
 }
-if Bubble
-	Menu,Tray,ToggleCheck,气泡提示
 if not Boot{
 	Boot:=1
 	RegWrite,REG_SZ,HKEY_CURRENT_USER,HotWindows,Hotboot,% Boot
@@ -122,7 +109,7 @@ SysGet,Height,17
 ListWidth:=Width/4
 
 ;<<<<<<<<<<<<声明全局变量>>>>>>>>>>>>
-global Path_data,Show_mode,K_ThisHotkey,WHERE_list,Path_list,Ger,Gers,Starts,NewEdition,WS_EX_TOOLWINDOW,WS_EX_APPWINDOW,GW_OWNER
+global Path_data,Show_mode,K_ThisHotkey,WHERE_list,Path_list,Ger,Gers,WS_EX_TOOLWINDOW,WS_EX_APPWINDOW,GW_OWNER,complete
 
 ;<<<<<<<<<<<<检查更新>>>>>>>>>>>>
 UpdateInfo:=Git_Update("https://github.com/liumenggit/HotWindows","Show")
@@ -136,8 +123,6 @@ Gui,Add,StatusBar
 WinSet,Transparent,200,ahk_id %MyGuiHwnd%
 
 ;<<<<<<<<<<<<创建SQL表>>>>>>>>>>>>
-FileDelete,%Path_data%
-Sleep,200
 IfNotExist,%Path_data%
 {
 	Catalog:=ComObjCreate("ADOX.Catalog")
@@ -165,10 +150,13 @@ return
 ;<<<<<<<<<<<<主要功能的标签>>>>>>>>>>>>
 Layout:
 Critical
+if complete{
+	Critical off
+	return
+}
 StringRight,H_ThisHotkey,A_ThisHotkey,1
 K_ThisHotkey:=K_ThisHotkey H_ThisHotkey
 StrLens := StrLen(K_ThisHotkey)
-ToolTip,,%K_ThisHotkey%
 if (StrLens="1"){
 	loop,9{
 		Hotkey,%A_Index%,Table
@@ -180,6 +168,7 @@ SQL_List("SELECT Activate.title,Activate.times,t1.pid,t1.path FROM Activate LEFT
 if WHERE_list.Length() and K_ThisHotkey{
 	Show_list(WHERE_list)
 	if (WHERE_list.Length()="1"){
+		Critical off
 		Activate("1")
 		Send {%Hot_Set_key% Up}
 	}
@@ -291,17 +280,24 @@ Activate(WHERE_time){
 	Activate:=WHERE_list[WHERE_time].PID
 	Title:=WHERE_list[WHERE_time].Title
 	Path:=WHERE_list[WHERE_time].Path
+	complete:=1
 	if Activate{
 		WinActivate,ahk_id %Activate%
 	}else{
-		Try RunWait %Path%
-			catch e
-				return
-	}
-	if not SQL_Get("SELECT Times FROM Activate WHERE Title='" Title "'")
-		SQL_Run("Insert INTO Activate (Title,pinyin,Times,Add_Time) VALUES ('" Title "','" zh2py(Title) "','1','" A_Now "')")
-	else
-		SQL_Run("UPDATE Activate SET Times = Times+1 , Add_Time = '" A_Now "' WHERE Title='" Title "'")
+		Try{
+			RunWait %Path%
+	}catch e{
+	KeyWait,Space
+	complete:=
+	return
+}
+}
+if not SQL_Get("SELECT Times FROM Activate WHERE Title='" Title "'")
+	SQL_Run("Insert INTO Activate (Title,pinyin,Times,Add_Time) VALUES ('" Title "','" zh2py(Title) "','1','" A_Now "')")
+else
+	SQL_Run("UPDATE Activate SET Times = Times+1 , Add_Time = '" A_Now "' WHERE Title='" Title "'")
+KeyWait,Space
+complete:=
 }
 
 Cancel(){
@@ -465,14 +461,25 @@ return id-1
 handle:
 return
 ;<<<<<<<<<<<<MENU的功能>>>>>>>>>>>>
-Bubble:
-	if Bubble
-		RegWrite,REG_DWORD,HKEY_CURRENT_USER,SOFTWARE\Policies\Microsoft\Windows\Explorer,EnableLegacyBalloonNotifications,0
-	else
-		RegWrite,REG_DWORD,HKEY_CURRENT_USER,SOFTWARE\Policies\Microsoft\Windows\Explorer,EnableLegacyBalloonNotifications,1
-	Menu,Tray,ToggleCheck,气泡提示
-	RunWait %comspec% /c "taskkill /f /im explorer.exe",,Hide
-	Run %comspec% /c "start c:\Windows\explorer.exe",,Hide
+Traytip:
+	if (Show_mode = "TrayTip")
+		return
+	RegRead,Bubble,HKEY_CURRENT_USER,SOFTWARE\Policies\Microsoft\Windows\Explorer,EnableLegacyBalloonNotifications
+	if not Bubble {
+		MsgBox,4,重要设置,点击'Yes'资源管理器会重启如有重要进程请保存后再次设置。
+		IfMsgBox Yes
+		{
+			RegWrite,REG_DWORD,HKEY_CURRENT_USER,SOFTWARE\Policies\Microsoft\Windows\Explorer,EnableLegacyBalloonNotifications,1
+			RunWait %comspec% /c "taskkill /f /im explorer.exe",,Hide
+			Run %comspec% /c "start c:\Windows\explorer.exe",,Hide
+		}else{
+			return
+		}
+	}
+	Menu,Show_mode,ToggleCheck,Traytip
+	Menu,Show_mode,Uncheck,listview
+	Show_mode:="TrayTip"
+	RegWrite,REG_SZ,HKEY_CURRENT_USER,HotWindows,HotShow_mode,TrayTip
 return
 
 Support:
@@ -487,12 +494,13 @@ Auto:
 	Menu,Tray,ToggleCheck,开机启动
 return
 
-Show_mode:
-	Show_mode:=A_ThisMenuItem
-	loop,Parse,Show_modes,`,
-		Menu,Show_mode,Uncheck,%A_LoopField%
-	Menu,Show_mode,ToggleCheck,%A_ThisMenuItem%
-	RegWrite,REG_SZ,HKEY_CURRENT_USER,HotWindows,HotShow_mode,%A_ThisMenuItem%
+listview:
+	if (Show_mode = "Listview")
+		return
+	Show_mode:="Listview"
+	Menu,Show_mode,Uncheck,Traytip
+	Menu,Show_mode,ToggleCheck,listview
+	RegWrite,REG_SZ,HKEY_CURRENT_USER,HotWindows,HotShow_mode,Listview
 return
 Hot_key:
 	loop,Parse,Layout
@@ -696,7 +704,7 @@ Git_Update(GitUrl,GressSet:="Hide"){
 	}else{
 		Progress,,,暂无更新,% Project_Name
 	}
-	Progress,Off
+	;Progress,Off
 	return Git_CcommitKey
 }
 
@@ -785,45 +793,45 @@ W_InternetCheckConnection(lpszUrl){ ;检查FTP服务是否可连接
 
 DownloadFile(UrlToFile, SaveFileAs, Overwrite := True, UseProgressBar := True) {
 	;Check if the file already exists and if we must not overwrite it
-		If (!Overwrite && FileExist(SaveFileAs))
-		Return
-		;Check if the user wants a progressbar
-		If (UseProgressBar) {
-			;Initialize the WinHttpRequest Object
-				WebRequest := ComObjCreate("WinHttp.WinHttpRequest.5.1")
-				;Download the headers
-				WebRequest.Open("HEAD", UrlToFile)
-				WebRequest.Send()
-				;Store the header which holds the file size in a variable:
-				FinalSize := WebRequest.GetResponseHeader("Content-Length")
-				;Create the progressbar and the timer
-				SetTimer, __UpdateProgressBar, 100
-		}
+	if (!Overwrite && FileExist(SaveFileAs))
+		return
+	;Check if the user wants a progressbar
+	if (UseProgressBar) {
+		;Initialize the WinHttpRequest Object
+		WebRequest := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+		;Download the headers
+		WebRequest.Open("HEAD", UrlToFile)
+		WebRequest.Send()
+		;Store the header which holds the file size in a variable:
+		FinalSize := WebRequest.GetResponseHeader("Content-Length")
+		;Create the progressbar and the timer
+		SetTimer, __UpdateProgressBar, 100
+	}
 	;Download the file
-		UrlDownloadToFile, %UrlToFile%, %SaveFileAs%
-		;Remove the timer and the progressbar because the download has finished
-		If (UseProgressBar) {
-			Progress, Off
-				SetTimer, __UpdateProgressBar, Off
-				Return "True"
-		}
-	Return
+	URLDownloadToFile, %UrlToFile%, %SaveFileAs%
+	;Remove the timer and the progressbar because the download has finished
+	if (UseProgressBar) {
+		Progress, Off
+		SetTimer, __UpdateProgressBar, Off
+		return "True"
+	}
+	return
 
-		;The label that updates the progressbar
-		__UpdateProgressBar:
-		;Get the current filesize and tick
-		CurrentSize := FileOpen(SaveFileAs,"r").Length ;FileGetSize wouldn't return reliable results
-		CurrentSizeTick := A_TickCount
-		;Calculate the downloadspeed
-		Speed := Round((CurrentSize/1024-LastSize/1024)/((CurrentSizeTick-LastSizeTick)/1000)) "Kb/s"
-		;Save the current filesize and tick for the next time
-		LastSizeTick := CurrentSizeTick
-		LastSize := FileOpen(SaveFileAs,"r").Length
-		;Calculate percent done
-		PercentDone := Round(CurrentSize/FinalSize*100)
-		;Update the ProgressBar
-		Progress, %PercentDone%, % Speed
-		Return
+	;The label that updates the progressbar
+__UpdateProgressBar:
+	;Get the current filesize and tick
+	CurrentSize := FileOpen(SaveFileAs,"r").Length ;FileGetSize wouldn't return reliable results
+	CurrentSizeTick := A_TickCount
+	;Calculate the downloadspeed
+	Speed := Round((CurrentSize/1024-LastSize/1024)/((CurrentSizeTick-LastSizeTick)/1000)) "Kb/s"
+	;Save the current filesize and tick for the next time
+	LastSizeTick := CurrentSizeTick
+	LastSize := FileOpen(SaveFileAs,"r").Length
+	;Calculate percent done
+	PercentDone := Round(CurrentSize/FinalSize*100)
+	;Update the ProgressBar
+	Progress, %PercentDone%, % Speed
+return
 }
 
 
