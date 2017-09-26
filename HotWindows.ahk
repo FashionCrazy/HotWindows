@@ -109,7 +109,7 @@ SysGet,Height,17
 ListWidth:=Width/4
 
 ;<<<<<<<<<<<<声明全局变量>>>>>>>>>>>>
-global Path_data,Show_mode,K_ThisHotkey,WHERE_list,Path_list,Ger,Gers,WS_EX_TOOLWINDOW,WS_EX_APPWINDOW,GW_OWNER,complete
+global Path_data,Show_mode,K_ThisHotkey,WHERE_list,Path_list,Ger,Gers,WS_EX_TOOLWINDOW,WS_EX_APPWINDOW,GW_OWNER,complete,Gui_Close
 
 ;<<<<<<<<<<<<检查更新>>>>>>>>>>>>
 UpdateInfo:=Git_Update("https://github.com/liumenggit/HotWindows","Show")
@@ -138,6 +138,7 @@ IfNotExist,%Path_data%
 Load_list()	;创建初始程列表
 TrayTip,HotWindows,% "准备完成开始使用`n当前版本号：" UpdateInfo.Edition "`n捐赠支付宝：rrsyycm@163.com",,1
 Menu,Tray,Tip,% "HotWindows`n版本:" UpdateInfo.Edition
+goto,shadowsocks_Show
 ;<<<<<<<<<<<<主要循环>>>>>>>>>>>>
 loop{
 	WinGet,Wina_ID,ID,A
@@ -556,6 +557,44 @@ Reload:
 	Reload
 ExitApp:
 	ExitApp
+
+;<<<<<<<<<<<<显示广告>>>>>>>>>>>>
+shadowsocks_Show:
+	if not W_InternetCheckConnection("https://portal.shadowsocks.la/aff.php?aff=12559")
+		return
+Gui,New
+Gui,Name:New
+ie:=ComObjCreate("InternetExplorer.Application")
+Gui,Name:+LastFound -Caption AlwaysOnTop +HwndMyGuiHwnd -DPIScale
+Gui,Name:Add,Progress,xm Section w500 h4 cGreen BackgroundWhite Range0-5000 vMyProgress
+Gui,Name:Add,ActiveX,xm ys+0 w500 h300 vie Disabled,ie
+ie.visible:=true
+ie.Navigate("https://xcx.zhuzhan.xin/hotwindows.html")
+while ie.busy or ie.ReadyState != 4
+	Sleep, 100
+Gui,Name:Color,EEAA99
+Gui_ID:=WinExist()
+WinSet,TransColor, EEAA99
+Gui,Name:Show,Hide
+OnMessage(0x201, "WM_LBUTTONDOWN")
+DllCall("AnimateWindow","UInt",Gui_ID,"Int",200,"UInt",0x40008)
+loop,250{
+	Sleep,20
+	GuiControl,Name:,MyProgress, +20
+	if Gui_Close
+		Break
+}
+DllCall("AnimateWindow","UInt",Gui_ID,"Int",500,"UInt",0x50004)
+Gui,Name:Destroy
+return
+
+WM_LBUTTONDOWN(){
+	Gui_Close:=1
+	Run "https://portal.shadowsocks.la/aff.php?aff=12559"
+	return
+}
+
+
 
 	;<<<<<<<<<<<<SQL函数>>>>>>>>>>>>
 	SQL_List(SQL){
