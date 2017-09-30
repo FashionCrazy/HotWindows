@@ -5,7 +5,7 @@
 * 根据窗口标题名称的字母快速的激活窗口/程序，例如激活google浏览器窗口按下Space+go即可激活窗口/程序。
 
 ## HotWindows如何使用？
-[![观看试用教程](https://github.com/liumenggit/pic/raw/master/HotWindows-fm.jpg)](http://my.tv.sohu.com/us/251086486/93269967.shtml)
+[![观看试用教程](https://github.com/liumenggit/pic/raw/master/HotWindows-fm.jpg)](http://my.tv.sohu.com/pl/9406128/index.shtml)
 
 ## 最新制作意向
 * 想要将Habit中的功能合并到HotWindows。
