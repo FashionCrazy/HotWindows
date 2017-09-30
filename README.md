@@ -1,21 +1,18 @@
 ## HotWindows是什么？
-一个增强窗口切换效率的脚本。让你从菜鸟变成高手，从高手变成无影手。
+* 一个增强窗口切换/打开程序效率的脚本。让你从菜鸟变成高手，从高手变成无影手。
 
 ## HotWindows有那些功能？
-* 热激活功能根据窗口标题名称的字母快速的激活窗口/程序。
+* 根据窗口标题名称的字母快速的激活窗口/程序，例如激活google浏览器窗口按下Space+go即可激活窗口/程序。
 
 ## HotWindows如何使用？
-[演示视频观看地址](http://www.autoahk.com/archives/3091)
-
-## GIF效果演示
-![](https://github.com/liumenggit/pic/raw/master/HotWindows.gif)
+[![观看试用教程](https://github.com/liumenggit/pic/raw/master/HotWindows-fm.jpg)](http://my.tv.sohu.com/us/251086486/93269967.shtml)
 
 ## 最新制作意向
 * 想要将Habit中的功能合并到HotWindows。
 
 ## 问题反馈
 在使用中有任何问题，欢迎反馈给我，可以用以下联系方式跟我交流。
-* Email:admin@xueahk.com
+* Email:admin@autoahk.com
 * QQ:4845514
 
 ## 捐赠开发者
