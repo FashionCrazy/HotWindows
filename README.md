@@ -5,13 +5,23 @@
 * 根据窗口标题名称的字母快速的激活窗口/程序，例如激活google浏览器窗口按下Space+go即可激活窗口/程序。
 
 ## HotWindows如何使用？
-[![观看试用教程](https://github.com/liumenggit/pic/raw/master/HotWindows-fm.jpg)](http://my.tv.sohu.com/pl/9406128/index.shtml)
+* 激活窗口/程序
+	* 打开资源管理器 运行HotWindows；
+	* 按住Space，单击'R'键，HotWindows将会显示窗口标题中含有'R'或中文首字母含有'R'的窗口；
+	* 单击'W'键，此时如果所有窗口中只有一个任务管理器含有RW则激活'任务管理器窗口'；
+	* 如果列表中还有其他能够匹配'RW'窗口，可以选择继续筛选单击'管'字的首字母'G' 或 ↑↓键选择程序松开Space即可激活窗口；
+	* HotWindows窗口列表中○表示窗口●表示程序；
+* 添加程序
+	* 手动添加 右键软件托盘图标点击添加程序；
+	* 自动添加 当有程序运行后HotWindows就会自动搜集软件到数据；
+* 视频教程
+[![观看教程](https://github.com/liumenggit/pic/raw/master/HotWindows-1740.jpg)](http://my.tv.sohu.com/pl/9406128/index.shtml)
 
 ## 最新制作意向
 * 想要将Habit中的功能合并到HotWindows。
 
 ## 问题反馈
-在使用中有任何问题，欢迎反馈给我，可以用以下联系方式跟我交流。
+ 在使用中有任何问题，欢迎反馈给我，可以用以下联系方式跟我交流。
 * Email:admin@autoahk.com
 * QQ:4845514
 
